@@ -1,0 +1,2 @@
+refreshMe = ->
+    alert("Refreshing")

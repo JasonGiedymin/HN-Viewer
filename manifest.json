@@ -1,0 +1,14 @@
+{
+  "name": "HN MFriendly",
+  "version": "1.0",
+  "description": "Yet another HN viewer.",
+  "permissions": [
+	  "tabs",
+	  "bookmarks",
+    "http://news.ycombinator.com/"
+  ],
+  "browser_action": {
+    "default_icon": "snowflake.png",
+    "popup": "index.html"
+  }
+}

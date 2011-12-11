@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+  <script src="lib/date.js"></script>
+  <script src="lib/coffee-script.js"></script>
+
+</head>
+
+<body>
+
+<h1 id="title">Loading HN...</h1>
+
+<script src="lib/jquery.min.js"></script>
+<script src="lib/underscore.js"></script>
+
+<script id="script-inject-views" type="text/coffeescript-injected">
+
+# ----- Views -----
+_template_test = '''
+Hello <%= test_var %>!
+'''
+compiled_template_test = _.template(_template_test)
+console.log compiled_template_test({test_var: "world"})
+
+</script>
+
+<script id="script-inject" type="text/coffeescript-injected">
+# ----- Vars & Classes -----
+if !stories? then stories = []
+
+class Story extends Backbone.Model
+  #defaults:
+  #  html_obj_array = ""
+  #  rank = ""
+  #  title = ""
+  #  link = ""
+  #  points = ""
+  #  id = ""
+  #  user = ""
+  #  comments = ""
+
+  initialize: ->
+    @rank = $(@html_obj_array[0]).find("td")[0].innerHTML.split('.')[0]
+    @title = $(@html_obj_array[0]).find("td.title a")[0].innerHTML
+    @link = $(@html_obj_array[0]).find("td.title a")[0].getAttribute("href")
+    
+    # Not all nodes have submitted tlds (i.e. Ask HN...)
+    temp_tld = $(@html_obj_array[0]).find("td.title span.comhead")[0]
+    if temp_tld then @tld = temp_tld.innerHTML.slice(2, -2) else @tld = "n/a"
+
+    # Works with point or points
+    @points = $(@html_obj_array[1]).find("td.subtext span[id^='score_']")[0]?.innerHTML.slice(0, -6).trim()
+    @id = $(@html_obj_array[1]).find("td.subtext span[id^='score_']")[0]?.getAttribute("id").split("_")[1]
+    @user = $(@html_obj_array[1]).find("td.subtext a")[0]?.innerHTML
+    @comments = $(@html_obj_array[1]).find("td.subtext a")[2]?.innerHTML.slice(0, -8).trim()
+    
+    #console.log $(@html_obj_array[0]).find("td.title a")[0].innerHTML
+    #console.log @rank + "--" + @id + "--" + @title + "--" + @link + "--" + @tld  + "--" + @points  + "--" + @user  + "--" + @comments
+  
+  clear: ->
+    @destroy()
+    @view.remove()
+
+class StoryList extends Backbone.Collection
+  model: Story
+  localStorage: new Store("hn-stories")
+
+class StoryView extends Backbone.View
+  tagName: "li"
+
+  initialize: ->
+    @model.bind('change', this.render);
+    @model.view = this;
+
+  render: =>
+    this.$(@el).html(  )
+
+# ----- Functions -----
+
+clearStockAttrs = () ->
+  # Removals
+  $("head link[rel='stylesheet']").remove()
+  $("[style]").removeAttr('style')
+  $("* [bgcolor]").removeAttr('bgcolor')
+
+  $($("body table tbody tr")[3]).hide()
+  #$("tr td").css("background-color", "white")
+  #$("table").show()
+  #$("tr td").show()
+
+
+addButtons = () ->
+  # Build refresh utton
+  button_refresh = document.createElement('button')
+  button_refresh.id = 'refresh'
+  button_refresh.innerHTML = 'Refresh'
+  button_refresh.addEventListener("click", ->
+    alert("Yo")
+  )
+
+  # Add refresh button
+  if $("td span.pagetop #refresh").length == 0
+    menu_obj = $("td span.pagetop")[0]
+    $(menu_obj).append("&nbsp;&nbsp;|&nbsp;")
+    #menu_obj.appendChild(button_refresh)
+    $(menu_obj).append(button_refresh)
+
+_process = () ->
+  _stories = []
+  original_body = $($("body table tbody tr")[3]).find("td table tbody tr")
+  #_stories.push( new Story({html_obj_array: [original_body[n], original_body[n+1], original_body[n+2]]})) for n in [0..original_body.length-3] by 3
+  #new Story({html_obj_array: [original_body[n], original_body[n+1], original_body[n+2]]})) for n in [0..original_body.length-3] by 3
+  $($("body table tbody tr")[3]).remove()
+  return _stories
+
+_showStories = () ->
+  $("body center").remove()
+  $("body div").remove()
+
+  for story in stories  
+    $("body").append("<div>#{story.title}</div>")
+
+consumeMeta = () ->
+  # Consume Meta
+  if $("meta#hn-consumed").length == 0
+    meta_consumed = document.createElement('meta')
+    meta_consumed.id = 'hn-consumed'
+    meta_consumed.name = 'consumed'
+    meta_consumed.content = 'true'
+    $("head").append(meta_consumed)
+    stories = _process()
+  else
+    console.log("Requested processing but already processed.")
+    console.log stories
+  
+  #_showStories()
+
+# ----- Main -----
+
+# Logging
+console.log "Injected jQuery ver:[#{$().jquery}]."
+#console.log "HN cosumed? [#{$('meta#hn_consumed').attr('content')}]"
+
+clearStockAttrs()
+addButtons()
+consumeMeta()
+
+#compiled_template_test({test_var: "world"})
+</script>
+
+<script type="text/coffeescript">
+
+URL_HN = "http://news.ycombinator.com/"
+
+getHNTab = (tab) ->
+  chrome.tabs.get(tab.id, (tab) ->
+    # Twitter Bootstrap JS
+    chrome.tabs.insertCSS(null, {"file": "bootstrap.min.css"})
+    chrome.tabs.insertCSS(null, {"file": "custom.css"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-alerts.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-buttons.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-dropdown.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-modal.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-popover.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-scrollspy.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-tabs.js"})
+    #chrome.tabs.executeScript(null, {"file": "lib/bootstrap/bootstrap-twipsy.js"})
+
+    chrome.tabs.executeScript(null, {"file": "lib/underscore.js"}, ->
+      chrome.tabs.executeScript(null, {"file": "lib/backbone.js"}, ->
+        chrome.tabs.executeScript(null, {"file": "lib/backbone-localstorage.js"})
+      )
+    )
+
+    chrome.tabs.executeScript(null, {"file": "lib/jquery.min.js"}, ->
+      chrome.tabs.executeScript(null, {"code": CoffeeScript.compile($('#script-inject').text())}, ->
+        chrome.tabs.executeScript(null, {"code": CoffeeScript.compile($('#script-inject-views').text())}, ->
+          $("#title").text("Complete.")
+        )
+      )
+    )
+  )
+
+checkTabs = () ->
+  chrome.tabs.getAllInWindow(null, (tabs) ->
+    tab_found = false
+    tab_hn = null
+
+    for tab in tabs
+      if tab.url == URL_HN
+        tab_found = true
+        tab_hn = tab
+    
+    if !tab_found
+      chrome.tabs.create({url: URL_HN}, getHNTab)
+    else
+      getHNTab(tab_hn)
+  )
+
+initPage = () ->
+  checkTabs()
+
+$().ready( initPage )
+
+</script>
+
+</body>
+</html>
